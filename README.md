@@ -24,12 +24,12 @@ Schedule Trigger (daily, morning)
      │
      ▼
 RSS Read × 6 
-  - OpenAI Blog        (official feed)
-  - Google AI Blog     (official feed)
-  - GitHub Blog        (official feed)
-  - NVIDIA Developer   (official feed)
-  - Anthropic          (RSSHub mirror — see notes)
-  - Hugging Face       (Daily Papers feed — see notes)
+  - OpenAI Blog        
+  - Google AI Blog     
+  - GitHub Blog        
+  - NVIDIA Developer   
+  - Anthropic          
+  - Hugging Face       
      │
      ▼
 Merge (append mode)
@@ -47,7 +47,7 @@ Aggregate (Individual Fields: title, link, contentSnippet)
 Code node (build readable article-list text block, handle missing snippets)
      │
      ▼
-Google Gemini (gemini-2.0-flash) — ranks importance, summarizes, formats digest
+Google Gemini (gemini-3.5-flash) — ranks importance, summarizes, formats digest
      │
      ▼
 Telegram — Send Message (Parse Mode: Markdown)
