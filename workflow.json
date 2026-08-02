@@ -1,0 +1,401 @@
+{
+  "name": "AI News",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [-304, 256],
+      "id": "1b3aa835-88e5-4703-8538-4e3867728e8d",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://openai.com/news/rss.xml",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [16, 160],
+      "id": "722b7f29-263b-4afa-a91a-bf7b39ad13f4",
+      "name": "OpenAI"
+    },
+    {
+      "parameters": {
+        "url": "https://rsshub.bestblogs.dev/anthropic/news",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [16, -32],
+      "id": "2a0f55e6-0553-49df-a50d-69345bc02dd1",
+      "name": "Anthropic",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://raw.githubusercontent.com/huangboming/1huggingface-daily-paper-feed/refs/heads/main/feed.xml",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [16, 352],
+      "id": "c88ba3f5-9651-419f-9f41-1969d4f4a653",
+      "name": "Hugging Face",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://github.blog/feed/",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [16, 544],
+      "id": "40bc39ed-87b1-40db-aed3-5215504b10d1",
+      "name": "GitHub"
+    },
+    {
+      "parameters": {
+        "url": "https://blog.google/technology/ai/rss/",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [16, 736],
+      "id": "d0471618-5020-4952-a6e8-30e18547b89f",
+      "name": "Google"
+    },
+    {
+      "parameters": {
+        "url": "https://developer.nvidia.com/blog/feed/",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [16, -224],
+      "id": "de462a54-1ccc-4150-b2a6-737d343b4ce1",
+      "name": "Nvidia"
+    },
+    {
+      "parameters": {
+        "numberInputs": 6
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [320, 192],
+      "id": "40952a9e-c908-496e-96d7-1d3c3f0d208a",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "db673cd4-b3ef-45cc-9557-2c055e669a60",
+              "leftValue": "={{ /ai|llm|gpt|claude|gemini|neural|machine learning|deep learning|transformer|generative|agent|opus|sonnet|haiku/i.test(($json.title || '') + ' ' + ($json.contentSnippet || '')) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [736, 256],
+      "id": "f9b11ff3-41ab-42c3-87d4-0e4e6bfba325",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "title"
+            },
+            {
+              "fieldToAggregate": "link"
+            },
+            {
+              "fieldToAggregate": "contentSnippet"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [944, 256],
+      "id": "6a727fcc-7dbb-496f-a7a4-58e805b116c3",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "jsCode": "// create a list of articles instead of having three separate arrays\nconst titles = $input.first().json.title;\nconst links = $input.first().json.link;\nconst snippets = $input.first().json.contentSnippet;\n\nlet articleList = '';\n\nfor (let i = 0; i < titles.length; i++) {\n  const snippet = snippets[i] && snippets[i].trim() !== '' \n    ? snippets[i] \n    : '(no summary available, use title only)';\n  \n  articleList += `${i + 1}. Title: ${titles[i]}\\nSnippet: ${snippet}\\nLink: ${links[i]}\\n\\n`;\n}\n\nreturn [{ json: { articleList } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1136, 256],
+      "id": "a2eb3ee1-1162-4288-8f1d-6dc4b5c6678d",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an AI news curator producing a daily Telegram digest.\n\nINPUT: A list of AI-related articles from the last 24 hours, each with a title, snippet, and link.\n{{ $json.articleList }}\n\nSTEP 1 — SELECT\nChoose the 5 to 8 most genuinely important stories from the list. Prioritize:\n- Major model releases or version updates from well-known labs\n- Significant research breakthroughs\n- Notable industry shifts (funding, acquisitions, policy, major partnerships)\n- Announcements with wide, immediate impact\n\nExclude:\n- Minor feature tweaks, routine product housekeeping, or maintenance posts\n- Duplicate or near-duplicate coverage of the same story (pick the single best source)\n- Opinion pieces, listicles, or \"roundup\" articles with no new information\n\nIf fewer than 5 stories meet the bar, include only the ones that genuinely qualify — do not pad the list with weak stories to hit a minimum.\n\nSTEP 2 — SUMMARIZE\nFor each selected story, write exactly 1-2 sentences in plain, neutral language a non-expert could understand. No jargon unless it's the subject itself (then briefly explain it).\n\nIf a snippet reads \"(no summary available, use title only)\", base the summary strictly on the title. Do not invent, assume, or infer details not present in the title.\n\nSTEP 3 — FORMAT\nOutput ONLY the digest below, using Telegram Markdown. No preamble, no closing remarks, no explanation of your choices, no notes about excluded stories.\n\n🤖 *AI News Digest — {{ $today.format('DDD') }}*\n\n1. *[Title]*\n[1-2 sentence summary]\n🔗 [Link]\n\n2. *[Title]*\n[1-2 sentence summary]\n🔗 [Link]\n\n(continue numbering sequentially for all selected stories)\n\nRULES:\n- Titles must match the source exactly (no rewriting for style).\n- Never fabricate a link — only use links provided in the input.\n- Never exceed 2 sentences per summary.\n- If the input list is empty or contains no qualifying stories, output only: \"No major AI news today.\""
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [1328, 256],
+      "id": "5b5f3d86-6735-454a-9397-a74d1600e9e5",
+      "name": "Message a model",
+      "credentials": "YOUR_GEMINI_CREDENTIALS"
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=  {{ $json.content.parts[0].text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1664, 256],
+      "id": "350f08fe-3d0f-4d66-b8da-6e232b131e3c",
+      "name": "Send a text message",
+      "webhookId": "YOUR_WEBHOOK_ID",
+      "credentials": "YOUR_TELEGRAM_CREDENTIALS"
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $json.link }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [528, 256],
+      "id": "c7015e22-a7d4-480c-9244-f1bf77c81584",
+      "name": "Remove Duplicates"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Anthropic",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Nvidia",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Hugging Face",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GitHub",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Google",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Anthropic": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Hugging Face": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "GitHub": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Google": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "Nvidia": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "YOUR_VERSION_ID",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_INSTANCE_ID"
+  },
+  "nodeGroups": [],
+  "id": "YOUR_WORKFLOW_ID",
+  "tags": []
+}
